@@ -15,6 +15,11 @@ import os
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
 
+# print("DEBUG: DB_HOST from env =", os.getenv(
+#     'DB_HOST'))          # ← add these 4 lines
+# print("DEBUG: Loaded env file?", os.path.exists('.env'))
+# print("DEBUG: os.getcwd() =", os.getcwd())
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -94,9 +99,21 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        "OPTIONS": {
+            "sslmode": "require",  # Neon requires SSL
+        },
     }
 }
 
+
+#     }
+# }
+
+# DATABASES = {
+#     "default": dj_database_url.config(
+#         default=os.environ.get("DATABASE_URL")  # pull from env vars
+#     )
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
