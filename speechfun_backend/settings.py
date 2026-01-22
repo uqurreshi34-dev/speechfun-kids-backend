@@ -35,8 +35,16 @@ SECRET_KEY = 'django-insecure-5-l9*l%dv54rsn$bpov8ssd--azoz*3@y=lu6ztwo)+r10%un)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+# prefer to set on render
 
+# ALLOWED_HOSTS = [
+#     'speechfun-kids-backend.onrender.com',
+#     'localhost',          # optional, for local testing
+#     '127.0.0.1',          # optional
+#     '.onrender.com',      # wildcard for subdomains (safer long-term)
+# ]
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 # Application definition
 
