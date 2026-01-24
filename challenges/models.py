@@ -33,6 +33,7 @@ class Word(models.Model):
 class Challenge(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
+    audio = models.FileField(upload_to='audios/', null=True)
     letter = models.ForeignKey(Letter, on_delete=models.CASCADE)
     difficulty = models.CharField(max_length=10, choices=[(
         'easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')])
