@@ -28,6 +28,10 @@ class Word(models.Model):
     # That's why its written as tuples of 2 items
     difficulty = models.CharField(max_length=10, choices=[(
         'easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')])
+# Add this for admin
+
+    def __str__(self):
+        return self.word
 
 
 class Challenge(models.Model):
