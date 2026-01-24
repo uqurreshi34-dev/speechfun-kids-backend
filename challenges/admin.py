@@ -42,3 +42,7 @@ class UserProgressAdmin(admin.ModelAdmin):
     list_filter = ('completed', 'challenge__difficulty')
     search_fields = ('user__username', 'challenge__title')
     date_hierarchy = 'updated_at'
+
+    def get_queryset(self, request):
+        # Optimize queries
+        return super().get_queryset(request).select_related('user', 'challenge')

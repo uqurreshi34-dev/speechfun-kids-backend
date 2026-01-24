@@ -40,6 +40,9 @@ class Challenge(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Added for sorting.
     # Add fields for interactive elements, e.g., quiz questions.
 
+    def __str__(self):
+        return self.title
+
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -56,4 +59,5 @@ class UserProgress(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # Added for tracking.
 
     def __str__(self):
-        return self.challenge.title
+        status = "✓" if self.completed else "○"
+        return f"{status} {self.user.username} - {self.challenge.title}"
