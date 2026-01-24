@@ -46,3 +46,20 @@ class UserProgressAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Optimize queries
         return super().get_queryset(request).select_related('user', 'challenge')
+
+# Without it (return super()......above):
+
+# Django makes 3 separate database queries per UserProgress row:
+
+# Get UserProgress
+# Get related User (when displaying user.username)
+# Get related Challenge (when displaying challenge.title)
+
+
+# If you have 100 UserProgress records, that's 300 queries 🐌
+
+# With it:
+
+# Django makes 1 query using SQL JOINs
+# Gets UserProgress + User + Challenge all at once
+# 100 records = 1 query ⚡
