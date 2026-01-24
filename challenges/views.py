@@ -1,7 +1,9 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from .models import Letter, Word, Challenge, Comment, UserProgress
 from .serializers import (LetterSerializer, WordSerializer, ChallengeSerializer,
                           CommentSerializer, UserProgressSerializer)
@@ -108,6 +110,53 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj.user == request.user
+
+# UPDATED: Changed to function-based view for Token auth
+# Function-based views with @api_view and @permission_classes decorators are explicitly designed
+# for Token authentication
+# Class-based views use different authentication flow that requires additional configuration
+# Both are modern and valid - DRF supports both equally well
+# Token auth with decorators is just more straightforward and explicit
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_progress(request):
+    """Get all progress for the authenticated user"""
+    progress = UserProgress.objects.filter(user=request.user)
+    serializer = UserProgressSerializer(progress, many=True)
+    return Response(serializer.data)
+
+# UPDATED: Changed to function-based view for Token auth
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_progress(request):
+    """Update or create progress for a challenge"""
+    challenge_id = request.data.get('challenge')
+
+    if not challenge_id:
+        return Response({'error': 'Challenge ID required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    challenge = get_object_or_404(Challenge, pk=challenge_id)
+
+    progress, created = UserProgress.objects.update_or_create(
+        user=request.user,
+        challenge=challenge,
+        defaults={
+            'completed': request.data.get('completed', False),
+            'score': request.data.get('score', 0)
+        }
+    )
+
+    serializer = UserProgressSerializer(progress)
+    status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+    return Response(serializer.data, status=status_code)
+
+
+# Keep the old class-based views for backwards compatibility (if needed)
+
 
 # Only shows progress of currently logged-in user
 # Login required

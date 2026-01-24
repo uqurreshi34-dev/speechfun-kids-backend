@@ -3,8 +3,9 @@ from .views import (
     LetterList, WordListByLetter,
     ChallengeListByLetterAndDifficulty, ChallengeDetail,
     CommentListCreate, CommentDetail,
-    UserProgressList, UserProgressCreateOrUpdate
+    UserProgressList, UserProgressCreateOrUpdate, get_user_progress, update_progress
 )
+
 
 urlpatterns = [
     path('letters/', LetterList.as_view(), name='letter-list'),
@@ -16,7 +17,11 @@ urlpatterns = [
     path('challenges/<int:challenge_id>/comments/',
          CommentListCreate.as_view(), name='comment-list-create'),
     path('comments/<int:pk>/', CommentDetail.as_view(), name='comment-detail'),
-    path('progress/', UserProgressList.as_view(), name='user-progress-list'),
-    path('progress/update/', UserProgressCreateOrUpdate.as_view(),
-         name='user-progress-update'),
+    # NEW function-based views for Token auth
+    path('progress/', get_user_progress, name='get-user-progress'),
+    path('progress/update/', update_progress, name='update-progress'),
+    # Old class-based views (keep for backwards compatibility if needed)
+    #     path('progress/', UserProgressList.as_view(), name='user-progress-list'),
+    #     path('progress/update/', UserProgressCreateOrUpdate.as_view(),
+    #          name='user-progress-update'),
 ]
