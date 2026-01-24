@@ -54,3 +54,6 @@ class UserProgress(models.Model):
     completed = models.BooleanField(default=False)
     score = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)  # Added for tracking.
+
+    def __str__(self):
+        return self.challenge.title
