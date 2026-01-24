@@ -2,9 +2,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 from .models import Profile
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
+
 
 # Create your views here.
 
@@ -46,3 +50,29 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return Profile.objects.get(user=self.request.user)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def get_or_create_token(request):
+    email = request.data.get('email')
+    username = request.data.get('username')
+
+    if not email:
+        return Response({'error': 'Email is required'}, status=400)
+
+    # Get or create user
+    user, created = User.objects.get_or_create(
+        email=email,
+        defaults={'username': username or email.split('@')[0]}
+    )
+
+    # Get or create token
+    token, _ = Token.objects.get_or_create(user=user)
+
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username
+    })
