@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 import dj_database_url
+# Cloudinary Settings
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
@@ -190,10 +194,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Optional but recommended for better performance (compression + caching)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files (uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
 # cors
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
 
@@ -201,3 +201,18 @@ CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
 CORS_ALLOWED_ORIGINS = [origin.strip()
                         for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
 # CORS_ALLOW_ALL_ORIGINS = True  # For dev; restrict in production.
+
+
+# Media files (uploads)
+MEDIA_ROOT = BASE_DIR / 'media'
+
+cloudinary.config(
+    CLOUD_NAME=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    API_KEY=os.getenv('CLOUDINARY_API_KEY'),
+    API_SECRET=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True  # Use HTTPS
+)
+
+# Use Cloudinary as default storage for media files
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'  # Keep this for URLs in frontend

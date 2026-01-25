@@ -28,7 +28,7 @@ urlpatterns = [
 ]
 
 # Serve media files in development and production
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Only needed in development for static files
 if settings.DEBUG:
