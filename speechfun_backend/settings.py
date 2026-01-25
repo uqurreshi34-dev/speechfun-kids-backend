@@ -216,3 +216,9 @@ cloudinary.config(
 # Use Cloudinary as default storage for media files
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'  # Keep this for URLs in frontend
+
+# Optional: custom folder prefix in Cloudinary
+CLOUDINARY_STORAGE = {
+    # files will appear in folder speechfun-kids/audios/...
+    'PREFIX': 'speechfun-kids',
+}
