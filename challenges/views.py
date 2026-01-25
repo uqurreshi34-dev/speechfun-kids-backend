@@ -40,7 +40,7 @@ class ChallengeListByLetterAndDifficulty(generics.ListAPIView):
         letter_id = self.kwargs.get('letter_id')
         # .get() instead of [] → safer (won't raise KeyError)
         difficulty = self.request.query_params.get('difficulty', None)
-        queryset = Challenge.objects.filter(letter_id=letter_id)
+        queryset = Challenge.objects.filter(word__letter_id=letter_id)
         if difficulty in ['easy', 'medium', 'hard']:
             queryset = queryset.filter(difficulty=difficulty)
         return queryset.order_by('difficulty', 'title')

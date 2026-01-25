@@ -23,11 +23,12 @@ class ChallengeSerializer(serializers.ModelSerializer):
     # "Add an extra field to the serialized output called letter_name.
     # Its value should come from → the letter related object → its .letter field."
     word = WordSerializer(read_only=True)   # ← nested
-    letter_name = serializers.CharField(source='letter.letter', read_only=True)
+    letter_name = serializers.CharField(
+        source='word.letter.letter', read_only=True)
 
     class Meta:
         model = Challenge
-        fields = ['id', 'title', 'description', 'letter',
+        fields = ['id', 'title', 'description', 'word',  # nested word with audio
                   'letter_name', 'difficulty', 'created_at']
 
 
