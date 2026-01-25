@@ -37,15 +37,14 @@ class Word(models.Model):
 class Challenge(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
-    audio = models.FileField(upload_to='audios/', null=True)
-    letter = models.ForeignKey(Letter, on_delete=models.CASCADE)
+    word = models.ForeignKey(Word, on_delete=models.CASCADE)
     difficulty = models.CharField(max_length=10, choices=[(
         'easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')])
     created_at = models.DateTimeField(auto_now_add=True)  # Added for sorting.
     # Add fields for interactive elements, e.g., quiz questions.
 
     def __str__(self):
-        return self.title
+        return f"{self.title or 'Say ' + self.word.word} ({self.difficulty})"
 
 
 class Comment(models.Model):

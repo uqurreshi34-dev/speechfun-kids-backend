@@ -18,10 +18,37 @@ class WordAdmin(admin.ModelAdmin):
 
 @admin.register(Challenge)
 class ChallengeAdmin(admin.ModelAdmin):
-    list_display = ('title', 'letter', 'difficulty', 'created_at')
-    list_filter = ('difficulty', 'letter')
-    search_fields = ('title', 'description')
+    list_display = (
+        'title',
+        'get_letter',           # custom method instead of 'letter'
+        'word',                 # show the linked word
+        'get_word_audio',
+        'difficulty',
+        'created_at',
+    )
+    list_filter = (
+        'difficulty',
+        'word__letter',         # filter by letter via the word
+    )
+    search_fields = (
+        'title',
+        'description',
+        'word__word',           # search inside the word name
+    )
     date_hierarchy = 'created_at'
+
+    # Custom method to display the letter nicely
+    @admin.display(ordering='word__letter__letter', description='Letter')
+    def get_letter(self, obj):
+        if obj.word and obj.word.letter:
+            return obj.word.letter.letter.upper()
+        return '-'
+
+    @admin.display(description='Audio')
+    def get_word_audio(self, obj):
+        if obj.word and obj.word.audio:
+            return "Yes (click to play in frontend)"
+        return "No audio"
 
 
 @admin.register(Comment)
