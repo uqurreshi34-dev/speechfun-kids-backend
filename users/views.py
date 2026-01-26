@@ -1,4 +1,3 @@
-import re
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -13,6 +12,37 @@ from .emails import send_verification_email
 
 
 # Create your views here.
+# class RegisterView(generics.CreateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = RegisterSerializer
+#     permission_classes = [permissions.AllowAny]
+
+#     def create(self, request, *args, **kwargs):
+#         print("=== Registration Data ===")
+#         print(request.data)
+
+#         serializer = self.get_serializer(data=request.data)
+
+#         if not serializer.is_valid():
+#             print("❌ Validation errors:", serializer.errors)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#         user = serializer.save()   # creates inactive user
+#         print(f"✅ User created: {user.username}")
+
+#         # TEMPORARILY SKIP EMAIL - Just activate user immediately
+#         user.is_active = True
+#         user.save()
+#         print("✅ User activated (email verification skipped)")
+
+#         return Response(
+#             {
+#                 "detail": "Registration successful! You can now login.",
+#                 "email": user.email,
+#             },
+#             status=status.HTTP_201_CREATED
+#         )
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
