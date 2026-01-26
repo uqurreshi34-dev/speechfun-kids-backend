@@ -206,14 +206,25 @@ CORS_ALLOWED_ORIGINS = [origin.strip()
 # Media files (uploads)
 MEDIA_ROOT = BASE_DIR / 'media'
 
-cloudinary.config(
-    CLOUD_NAME=os.getenv('CLOUDINARY_CLOUD_NAME'),
-    API_KEY=os.getenv('CLOUDINARY_API_KEY'),
-    API_SECRET=os.getenv('CLOUDINARY_API_SECRET'),
-    secure=True  # Use HTTPS
-)
+# Load from env (safe even if missing)
+CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+API_KEY = os.getenv('CLOUDINARY_API_KEY')
+API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-# Use Cloudinary as default storage for media files
+if CLOUD_NAME and API_KEY and API_SECRET:
+    cloudinary.config(
+        cloud_name=CLOUD_NAME,
+        api_key=API_KEY,
+        api_secret=API_SECRET,
+        secure=True
+    )
+    # Use Cloudinary as default storage for media files
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    print("Cloudinary activated: DEFAULT_FILE_STORAGE =", DEFAULT_FILE_STORAGE)
+else:
+    print("WARNING: Cloudinary env vars missing — using local storage")
+
+
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'  # Keep this for URLs in frontend
 
