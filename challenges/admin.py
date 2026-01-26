@@ -55,6 +55,7 @@ class WordAdminForm(forms.ModelForm):
 
 @admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
+    form = WordAdminForm
     list_display = ('word', 'letter', 'difficulty', 'has_audio')
     list_filter = ('difficulty', 'letter')
     search_fields = ('word',)
