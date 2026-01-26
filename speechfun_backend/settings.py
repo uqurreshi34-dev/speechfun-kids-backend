@@ -81,14 +81,14 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    'cloudinary_storage',  # ← add this line! Required for the storage backend
+    'cloudinary',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary',
-    'cloudinary_storage',  # ← add this line! Required for the storage backend
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
