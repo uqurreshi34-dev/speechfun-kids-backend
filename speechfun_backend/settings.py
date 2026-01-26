@@ -17,7 +17,7 @@ import dj_database_url
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 load_dotenv()  # Load .env file
 
@@ -26,21 +26,20 @@ CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
 API_KEY = os.getenv('CLOUDINARY_API_KEY')
 API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-if all([CLOUD_NAME, API_KEY, API_SECRET]):
-    cloudinary.config(
-        cloud_name=CLOUD_NAME,
-        api_key=API_KEY,
-        api_secret=API_SECRET,
-        secure=True
-    )
+cloudinary.config(
+    cloud_name=CLOUD_NAME,
+    api_key=API_KEY,
+    api_secret=API_SECRET,
+    secure=True
+)
 
-    print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
-    print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
-else:
-    print("CLOUDINARY WARNING: Missing env vars — falling back to local")
-    print("Cloud name:", CLOUD_NAME)
-    print("API key:", API_KEY[:4] + '...' if API_KEY else None)
-    print("API secret:", 'set' if API_SECRET else 'missing')
+#     print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
+#     print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
+# else:
+#     print("CLOUDINARY WARNING: Missing env vars — falling back to local")
+#     print("Cloud name:", CLOUD_NAME)
+#     print("API key:", API_KEY[:4] + '...' if API_KEY else None)
+#     print("API secret:", 'set' if API_SECRET else 'missing')
 
 # Optional: custom folder prefix in Cloudinary
 CLOUDINARY_STORAGE = {
