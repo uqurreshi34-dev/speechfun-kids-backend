@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from dotenv import load_dotenv
 import os
 from pathlib import Path
 import dj_database_url
@@ -17,8 +18,8 @@ import dj_database_url
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-from dotenv import load_dotenv
 load_dotenv()  # Load .env file
 
 # print("DEBUG: DB_HOST from env =", os.getenv(
@@ -62,7 +63,7 @@ if all([CLOUD_NAME, API_KEY, API_SECRET]):
         api_secret=API_SECRET,
         secure=True
     )
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
     print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
     print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
 else:
