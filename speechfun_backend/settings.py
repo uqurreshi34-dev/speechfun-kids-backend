@@ -81,7 +81,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     'cloudinary',
-    'cloudinary_storage',  # ← add this line! Required for the storage backend
+    # 'cloudinary_storage',  # ← add this line! Required for the storage backend
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -238,7 +238,5 @@ CORS_ALLOWED_ORIGINS = [origin.strip()
 
 
 # Media files (uploads)
-MEDIA_ROOT = BASE_DIR / 'media'
-
-
 MEDIA_URL = '/media/'  # Keep this for URLs in frontend
+MEDIA_ROOT = BASE_DIR / 'media'
