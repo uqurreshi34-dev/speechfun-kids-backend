@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'users',
+    'cloudinary_storage',  # ← add this line! Required for the storage backend
     'challenges',
     'allauth',
     'allauth.account',
@@ -206,26 +207,28 @@ CORS_ALLOWED_ORIGINS = [origin.strip()
 # Media files (uploads)
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Load from env (safe even if missing)
+# Force load from env
 CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
 API_KEY = os.getenv('CLOUDINARY_API_KEY')
 API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-if CLOUD_NAME and API_KEY and API_SECRET:
+if all([CLOUD_NAME, API_KEY, API_SECRET]):
     cloudinary.config(
         cloud_name=CLOUD_NAME,
         api_key=API_KEY,
         api_secret=API_SECRET,
         secure=True
     )
-    # Use Cloudinary as default storage for media files
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    print("Cloudinary activated: DEFAULT_FILE_STORAGE =", DEFAULT_FILE_STORAGE)
+    print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
+    print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
 else:
-    print("WARNING: Cloudinary env vars missing — using local storage")
+    print("CLOUDINARY WARNING: Missing env vars — falling back to local")
+    print("Cloud name:", CLOUD_NAME)
+    print("API key:", API_KEY[:4] + '...' if API_KEY else None)
+    print("API secret:", 'set' if API_SECRET else 'missing')
 
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'  # Keep this for URLs in frontend
 
 # Optional: custom folder prefix in Cloudinary
