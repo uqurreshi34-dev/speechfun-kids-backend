@@ -1,3 +1,4 @@
+import traceback
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -59,30 +60,37 @@ class RegisterView(generics.CreateAPIView):
         if not serializer.is_valid():
             print("❌ Validation errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = serializer.save()   # creates inactive user
+            print(f"✅ User created: {user.username}")
 
-        user = serializer.save()   # creates inactive user
-        print(f"✅ User created: {user.username}")
+            # Create verification token
+            token_obj = EmailVerificationToken.objects.create(user=user)
 
-        # Create verification token
-        token_obj = EmailVerificationToken.objects.create(user=user)
+            # Send email
+            email_sent = send_verification_email(user, token_obj.token)
 
-        # Send email
-        email_sent = send_verification_email(user, token_obj.token)
+            if not email_sent:
+                user.delete()
+                return Response(
+                    {"detail": "Failed to send verification email. Please try again later."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
 
-        if not email_sent:
-            user.delete()
             return Response(
-                {"detail": "Failed to send verification email. Please try again later."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
+                {
+                    "detail": "Registration successful! Please check your email to verify your account.",
+                    "email": user.email,
+                },
+                status=status.HTTP_201_CREATED
             )
-
-        return Response(
-            {
-                "detail": "Registration successful! Please check your email to verify your account.",
-                "email": user.email,
-            },
-            status=status.HTTP_201_CREATED
-        )
+        except Exception as e:
+            print(f"❌ CRASH in create(): {type(e).__name__}: {e}")
+            traceback.print_exc()
+            return Response(
+                {"detail": f"Server error during registration: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class VerifyEmailView(APIView):
