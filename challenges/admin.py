@@ -22,7 +22,7 @@ class WordAdminForm(forms.ModelForm):
         model = Word
         fields = ['word', 'letter', 'difficulty', 'audio']
         widgets = {  # 'readonly': 'readonly', (put before placeholder once everything is set)
-            'audio': forms.TextInput(attrs={'placeholder': 'Auto-filled after upload'}),
+            'audio': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
         }
 
     def save(self, commit=True):
@@ -44,9 +44,12 @@ class WordAdminForm(forms.ModelForm):
                 # Save the Cloudinary URL
                 instance.audio = upload_result['secure_url']
                 print(f"✅ Uploaded to Cloudinary: {instance.audio}")
-
+# self.add_error comes from Django's base Form class — and since ModelForm inherits from Form,
+# your WordAdminForm automatically gets this method.
             except Exception as e:
                 print(f"❌ Cloudinary upload failed: {e}")
+                self.add_error(
+                    'audio_file', f"Cloudinary upload failed: {str(e)}")
 
         if commit:
             instance.save()

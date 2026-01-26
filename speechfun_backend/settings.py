@@ -198,6 +198,18 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # your email
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # app password
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
+
+# Site URL for verification links
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

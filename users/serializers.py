@@ -16,11 +16,26 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            is_active=False               # ← very important
+        )
+        return user
+
 # create() IS a built-in method in ModelSerializer - we're overriding it
 # default version: return self.Meta.model.objects.create(**validated_data)
 # That's why you can (and often should) override it when you need custom creation logic —
@@ -31,14 +46,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 # “This is the safe, already-checked version of what the user sent me.”
 # validate_data is a Python dictionary
 # validated_data is already safe to use — you don’t need to do extra .get(), .strip(), type checks, etc.
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
-        return user
 
 
 # Here's why you should not use ModelSerializer in this case:

@@ -1,3 +1,4 @@
+import re
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -6,12 +7,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
-from .models import Profile
+from .models import Profile, EmailVerificationToken
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
+from .emails import send_verification_email
 
 
 # Create your views here.
-
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -19,11 +20,65 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        user = User.objects.get(username=response.data['username'])
-        Token.objects.create(user=user)  # Create token for new user
-        Profile.objects.create(user=user)  # Auto-create profile
-        return response
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()   # creates inactive user
+
+        # Create verification token
+        token_obj = EmailVerificationToken.objects.create(user=user)
+        # token_obj.token is already a UUID thanks to model default
+
+        # Send email
+        email_sent = send_verification_email(user, token_obj.token)
+
+        if not email_sent:
+            # Optional: delete the half-created user or mark as problematic
+            user.delete()
+            return Response(
+                {"detail": "Failed to send verification email. Please try again later."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # You can return user data (without sensitive fields) or just success message
+        return Response(
+            {
+                "detail": "Registration successful! Please check your email to verify your account.",
+                "email": user.email,
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+class VerifyEmailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        token_str = request.query_params.get('token')
+        if not token_str:
+            return Response({"detail": "Token is required"}, status=400)
+
+        try:
+            token_obj = EmailVerificationToken.objects.get(token=token_str)
+        except EmailVerificationToken.DoesNotExist:
+            return Response({"detail": "Invalid token"}, status=400)
+
+        if not token_obj.is_valid():  # is_valid() methid in EmailVerification token
+            token_obj.delete()  # clean up expired
+            return Response({"detail": "Token has expired"}, status=410)
+
+        user = token_obj.user
+        if user.is_active:
+            return Response({"detail": "Account already verified"}, status=200)
+
+        user.is_active = True
+        user.save()
+
+        # Optional: clean up token after successful verification
+        token_obj.delete()
+
+        return Response({
+            "detail": "Email verified successfully! You can now log in."
+        })
 
 
 class LoginView(APIView):
@@ -35,6 +90,12 @@ class LoginView(APIView):
 
         # ← assumes validate() in loginserializer in serializers.py sets self.user
         user = serializer.user
+
+        if not user.is_active:
+            return Response(
+                {"detail": "Please verify your email before logging in."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         token, _ = Token.objects.get_or_create(user=user)
 
