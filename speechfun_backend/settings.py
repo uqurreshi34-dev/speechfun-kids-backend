@@ -200,12 +200,13 @@ REST_FRAMEWORK = {
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # or your email provider
-EMAIL_PORT = 587
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
+EMAIL_PORT = os.getenv('EMAIL_PORT', '587')
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # your email
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # app password
-DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
+# Always 'apikey' for SendGrid
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # SendGrid API key
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_FROM', os.getenv('EMAIL_HOST_USER'))
 
 # Site URL for verification links
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')

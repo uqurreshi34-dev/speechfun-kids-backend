@@ -1,3 +1,5 @@
+import socket
+import traceback
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
@@ -42,8 +44,11 @@ def send_verification_email(user, token):
 
     plain_message = strip_tags(html_message)
 
+    # Set timeout for socket operations
+    socket.setdefaulttimeout(10)
+
     try:
-        send_mail(
+        result = send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
@@ -51,7 +56,20 @@ def send_verification_email(user, token):
             html_message=html_message,
             fail_silently=False,
         )
-        return True
-    except Exception as e:
-        print(f"❌ Email sending failed: {e}")
+
+        if result == 1:  # send_mail returns number of emails sent
+            print(f"✅ Email sent successfully to {user.email}")
+            return True
+        else:
+            print("❌ Email sending failed - no emails sent")
+            return False
+
+    except socket.timeout:
+        print("❌ Email sending timed out - SMTP server not responding")
         return False
+    except Exception as e:
+        print(f"❌ Email sending failed: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return False
+    finally:
+        socket.setdefaulttimeout(None)
