@@ -21,8 +21,8 @@ class WordAdminForm(forms.ModelForm):
     class Meta:
         model = Word
         fields = ['word', 'letter', 'difficulty', 'audio']
-        widgets = {
-            'audio': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
+        widgets = {  # 'readonly': 'readonly', (put before placeholder once everything is set)
+            'audio': forms.TextInput(attrs={'placeholder': 'Auto-filled after upload'}),
         }
 
     def save(self, commit=True):
