@@ -20,26 +20,32 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
+        print("=== Registration Data ===")
+        print(request.data)
+
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        # Don't use raise_exception - handle errors manually
+        if not serializer.is_valid():
+            print("❌ Validation errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         user = serializer.save()   # creates inactive user
+        print(f"✅ User created: {user.username}")
 
         # Create verification token
         token_obj = EmailVerificationToken.objects.create(user=user)
-        # token_obj.token is already a UUID thanks to model default
 
         # Send email
         email_sent = send_verification_email(user, token_obj.token)
 
         if not email_sent:
-            # Optional: delete the half-created user or mark as problematic
             user.delete()
             return Response(
                 {"detail": "Failed to send verification email. Please try again later."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-        # You can return user data (without sensitive fields) or just success message
         return Response(
             {
                 "detail": "Registration successful! Please check your email to verify your account.",
@@ -124,7 +130,7 @@ def get_or_create_token(request):
         return Response({'error': 'Email is required'}, status=400)
 
     # Get or create user
-    user, created = User.objects.get_or_create(
+    user, _ = User.objects.get_or_create(
         email=email,
         defaults={'username': username or email.split('@')[0]}
     )
