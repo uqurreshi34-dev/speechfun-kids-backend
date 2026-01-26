@@ -20,7 +20,8 @@ class Word(models.Model):
     # "Apple", "Ant", "Axe", etc. are also gone automatically etc
     letter = models.ForeignKey(Letter, on_delete=models.CASCADE)
     # For speech audio files.
-    audio = models.FileField(null=True, blank=True)
+    # audio = models.FileField(null=True, blank=True)
+    audio = models.URLField(max_length=500, blank=True)  # Store Cloudinary URL
     # Django needs two different pieces of information for each option:
     # The real value that gets saved in the database
     # → short, usually lowercase, good for code & storage

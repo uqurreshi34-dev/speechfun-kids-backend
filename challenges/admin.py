@@ -1,5 +1,7 @@
 # challenges/admin.py
 from django.contrib import admin
+from django import forms
+import cloudinary.uploader
 from .models import Letter, Word, Challenge, Comment, UserProgress
 
 
@@ -9,11 +11,57 @@ class LetterAdmin(admin.ModelAdmin):
     search_fields = ('letter',)
 
 
+# Custom form for Word to handle file upload
+class WordAdminForm(forms.ModelForm):
+    audio_file = forms.FileField(
+        required=False,
+        help_text="Upload MP3 file - will be stored in Cloudinary"
+    )
+
+    class Meta:
+        model = Word
+        fields = ['word', 'letter', 'difficulty', 'audio']
+        widgets = {
+            'audio': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # If a file was uploaded, send it to Cloudinary
+        if 'audio_file' in self.files:
+            audio_file = self.files['audio_file']
+
+            try:
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    audio_file,
+                    resource_type="auto",
+                    folder="speechfun-kids/audios",
+                    public_id=f"{instance.word.lower().replace(' ', '_')}"
+                )
+
+                # Save the Cloudinary URL
+                instance.audio = upload_result['secure_url']
+                print(f"✅ Uploaded to Cloudinary: {instance.audio}")
+
+            except Exception as e:
+                print(f"❌ Cloudinary upload failed: {e}")
+
+        if commit:
+            instance.save()
+        return instance
+
+
 @admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
-    list_display = ('word', 'letter', 'difficulty')
+    list_display = ('word', 'letter', 'difficulty', 'has_audio')
     list_filter = ('difficulty', 'letter')
     search_fields = ('word',)
+
+    @admin.display(boolean=True, description='Audio')
+    def has_audio(self, obj):
+        return bool(obj.audio)
 
 
 @admin.register(Challenge)
@@ -47,8 +95,8 @@ class ChallengeAdmin(admin.ModelAdmin):
     @admin.display(description='Audio')
     def get_word_audio(self, obj):
         if obj.word and obj.word.audio:
-            return "Yes (click to play in frontend)"
-        return "No audio"
+            return "✅ Has audio"
+        return "❌ No audio"
 
 
 @admin.register(Comment)
