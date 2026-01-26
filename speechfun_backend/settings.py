@@ -50,6 +50,32 @@ DEBUG = False
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
+# Force load from env
+CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+API_KEY = os.getenv('CLOUDINARY_API_KEY')
+API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+
+if all([CLOUD_NAME, API_KEY, API_SECRET]):
+    cloudinary.config(
+        cloud_name=CLOUD_NAME,
+        api_key=API_KEY,
+        api_secret=API_SECRET,
+        secure=True
+    )
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
+    print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
+else:
+    print("CLOUDINARY WARNING: Missing env vars — falling back to local")
+    print("Cloud name:", CLOUD_NAME)
+    print("API key:", API_KEY[:4] + '...' if API_KEY else None)
+    print("API secret:", 'set' if API_SECRET else 'missing')
+
+# Optional: custom folder prefix in Cloudinary
+CLOUDINARY_STORAGE = {
+    # files will appear in folder speechfun-kids/audios/...
+    'PREFIX': 'speechfun-kids',
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -59,11 +85,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',  # ← add this line! Required for the storage backend
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
     'users',
-    'cloudinary_storage',  # ← add this line! Required for the storage backend
     'challenges',
     'allauth',
     'allauth.account',
@@ -207,32 +233,5 @@ CORS_ALLOWED_ORIGINS = [origin.strip()
 # Media files (uploads)
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Force load from env
-CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
-API_KEY = os.getenv('CLOUDINARY_API_KEY')
-API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
-
-if all([CLOUD_NAME, API_KEY, API_SECRET]):
-    cloudinary.config(
-        cloud_name=CLOUD_NAME,
-        api_key=API_KEY,
-        api_secret=API_SECRET,
-        secure=True
-    )
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    print("CLOUDINARY SUCCESS: Activated with cloud name:", CLOUD_NAME)
-    print("DEFAULT_FILE_STORAGE set to:", DEFAULT_FILE_STORAGE)
-else:
-    print("CLOUDINARY WARNING: Missing env vars — falling back to local")
-    print("Cloud name:", CLOUD_NAME)
-    print("API key:", API_KEY[:4] + '...' if API_KEY else None)
-    print("API secret:", 'set' if API_SECRET else 'missing')
-
 
 MEDIA_URL = '/media/'  # Keep this for URLs in frontend
-
-# Optional: custom folder prefix in Cloudinary
-CLOUDINARY_STORAGE = {
-    # files will appear in folder speechfun-kids/audios/...
-    'PREFIX': 'speechfun-kids',
-}
