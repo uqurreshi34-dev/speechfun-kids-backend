@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import health
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health),  # ✅ health endpoint here
     path('api/challenges/', include('challenges.urls')),
     path('api/users/', include('users.urls')),
     path('accounts/', include('allauth.urls')),  # For Google/social auth.
@@ -29,6 +31,7 @@ urlpatterns = [
 
 # Serve media files in development and production
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 # Only needed in development for static files
 if settings.DEBUG:

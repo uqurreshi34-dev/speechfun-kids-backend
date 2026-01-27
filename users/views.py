@@ -56,22 +56,26 @@ class RegisterView(generics.CreateAPIView):
 
         serializer = self.get_serializer(data=request.data)
 
-        # Don't use raise_exception - handle errors manually
-        if not serializer.is_valid():
-            print("❌ Validation errors:", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Let DRF handle validation (raises 400 automatically if invalid)
         try:
-            user = serializer.save()   # creates inactive user
-            print(f"✅ User created: {user.username}")
+            user = serializer.save()  # creates inactive user
+            print(f"✅ User created: {user.username} (ID: {user.id})")
 
-            # Create verification token
+            # Clean up any old tokens (prevents unique constraint errors)
+            EmailVerificationToken.objects.filter(user=user).delete()
+            print("Old tokens cleaned")
+
+            # Create new token
             token_obj = EmailVerificationToken.objects.create(user=user)
+            print(f"Token created: {token_obj.token}")
 
             # Send email
             email_sent = send_verification_email(user, token_obj.token)
 
             if not email_sent:
-                user.delete()
+                token_obj.delete()
+                # Optional: delete user if email is critical
+                # user.delete()
                 return Response(
                     {"detail": "Failed to send verification email. Please try again later."},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -84,11 +88,13 @@ class RegisterView(generics.CreateAPIView):
                 },
                 status=status.HTTP_201_CREATED
             )
+
         except Exception as e:
-            print(f"❌ CRASH in create(): {type(e).__name__}: {e}")
+            print(f"❌ CRASH during registration: {type(e).__name__}: {e}")
+            import traceback
             traceback.print_exc()
             return Response(
-                {"detail": f"Server error during registration: {str(e)}"},
+                {"detail": f"Server error: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
