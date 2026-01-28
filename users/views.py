@@ -1,4 +1,6 @@
 import traceback
+import os
+from groq import Groq
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -13,37 +15,6 @@ from .emails import send_verification_email
 
 
 # Create your views here.
-# class RegisterView(generics.CreateAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = RegisterSerializer
-#     permission_classes = [permissions.AllowAny]
-
-#     def create(self, request, *args, **kwargs):
-#         print("=== Registration Data ===")
-#         print(request.data)
-
-#         serializer = self.get_serializer(data=request.data)
-
-#         if not serializer.is_valid():
-#             print("❌ Validation errors:", serializer.errors)
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         user = serializer.save()   # creates inactive user
-#         print(f"✅ User created: {user.username}")
-
-#         # TEMPORARILY SKIP EMAIL - Just activate user immediately
-#         user.is_active = True
-#         user.save()
-#         print("✅ User activated (email verification skipped)")
-
-#         return Response(
-#             {
-#                 "detail": "Registration successful! You can now login.",
-#                 "email": user.email,
-#             },
-#             status=status.HTTP_201_CREATED
-#         )
-
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -91,7 +62,6 @@ class RegisterView(generics.CreateAPIView):
 
         except Exception as e:
             print(f"❌ CRASH during registration: {type(e).__name__}: {e}")
-            import traceback
             traceback.print_exc()
             return Response(
                 {"detail": f"Server error: {str(e)}"},
@@ -187,3 +157,56 @@ def get_or_create_token(request):
         'user_id': user.id,
         'username': user.username
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_word_help(request):
+    """AI helper to explain words to kids using Groq"""
+    word = request.data.get('word')
+
+    if not word:
+        return Response({'error': 'Word is required'}, status=400)
+
+    try:
+        # Get API key from environment
+        api_key = os.getenv('GROQ_API_KEY')
+        if not api_key:
+            print("❌ GROQ_API_KEY not found in environment")
+            return Response({'error': 'AI helper not configured'}, status=500)
+
+        # Initialize Groq client
+        client = Groq(api_key=api_key)
+
+        print(f"🤖 Getting AI help for word: {word}")
+
+        # Call Groq API
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""You are a friendly AI helper for kids ages 5-8 learning speech. 
+                    Explain the word "{word}" in a fun, simple way. Include:
+                    1. What it means (in 1 simple sentence)
+                    2. A fun example sentence using the word
+                    3. One fun fact about it
+
+                    Keep it under 50 words total. Be enthusiastic and use emojis!"""
+                }
+            ],
+            model="llama-3.3-70b-versatile",  # Groq's best free model
+            max_tokens=200,
+            temperature=0.7,
+        )
+
+        explanation = chat_completion.choices[0].message.content
+        print(f"✅ AI response: {explanation[:100]}...")
+
+        return Response({'explanation': explanation})
+
+    except Exception as e:
+        print(f"❌ AI error: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return Response({
+            'error': 'AI helper is taking a break. Try again in a moment! 😊'
+        }, status=500)
