@@ -27,9 +27,13 @@ class RegisterView(generics.CreateAPIView):
 
         serializer = self.get_serializer(data=request.data)
 
-        # Let DRF handle validation (raises 400 automatically if invalid)
+        # Validate first - THIS IS CRITICAL!
+        if not serializer.is_valid():
+            print("❌ Validation errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            user = serializer.save()  # creates inactive user
+            user = serializer.save()  # Now safe to call save()
             print(f"✅ User created: {user.username} (ID: {user.id})")
 
             # Clean up any old tokens (prevents unique constraint errors)
@@ -45,8 +49,7 @@ class RegisterView(generics.CreateAPIView):
 
             if not email_sent:
                 token_obj.delete()
-                # Optional: delete user if email is critical
-                # user.delete()
+                user.delete()  # Clean up user if email fails
                 return Response(
                     {"detail": "Failed to send verification email. Please try again later."},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -64,7 +67,7 @@ class RegisterView(generics.CreateAPIView):
             print(f"❌ CRASH during registration: {type(e).__name__}: {e}")
             traceback.print_exc()
             return Response(
-                {"detail": f"Server error: {str(e)}"},
+                {"detail": "Something went wrong. Please try again!"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
