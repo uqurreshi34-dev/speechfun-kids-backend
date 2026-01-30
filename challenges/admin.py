@@ -2,7 +2,74 @@
 from django.contrib import admin
 from django import forms
 import cloudinary.uploader
-from .models import Letter, Word, Challenge, Comment, UserProgress
+from .models import Letter, Word, Challenge, Comment, UserProgress, YesNoQuestion
+
+
+# Custom form for YesNoQuestion - uploads image/video to Cloudinary
+class YesNoQuestionAdminForm(forms.ModelForm):
+    visual_file = forms.FileField(
+        required=False,
+        help_text="Upload image (jpg/png) or short video (mp4). Max 5MB. Will be stored in Cloudinary."
+    )
+
+    class Meta:
+        model = YesNoQuestion
+        fields = ['scene_description', 'question',
+                  'correct_answer', 'visual', 'visual_url']
+        widgets = {
+            'visual_url': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # If a new file was uploaded
+        if 'visual_file' in self.files and self.files['visual_file']:
+            file = self.files['visual_file']
+
+            try:
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    resource_type="auto",  # auto detects image/video
+                    folder="speechfun-kids/yesno-visuals",
+                    # clean name
+                    public_id=f"q_{instance.question.lower().replace(' ', '_')[:50]}",
+                    overwrite=True,
+                    quality="auto",           # optimize
+                    fetch_format="auto",
+                    # Video specific (if video)
+                    transformation=[{'quality': 'auto', 'fetch_format': 'auto'}
+                                    ] if file.content_type.startswith('video') else None,
+                )
+
+                # Save the secure URL
+                instance.visual_url = upload_result['secure_url']
+                print(f"✅ Uploaded to Cloudinary: {instance.visual_url}")
+
+                # Optional: clear the FileField so it doesn't store locally
+                instance.visual = None
+
+            except Exception as e:
+                print(f"❌ Cloudinary upload failed: {e}")
+                self.add_error(
+                    'visual_file', f"Cloudinary upload failed: {str(e)}")
+
+        if commit:
+            instance.save()
+        return instance
+
+
+@admin.register(YesNoQuestion)
+class YesNoQuestionAdmin(admin.ModelAdmin):
+    form = YesNoQuestionAdminForm
+    list_display = ('question', 'correct_answer', 'has_visual')
+    list_filter = ('correct_answer',)
+    search_fields = ('question', 'scene_description')
+
+    @admin.display(boolean=True, description='Visual')
+    def has_visual(self, obj):
+        return bool(obj.visual_url)
 
 
 @admin.register(Letter)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Letter, Word, Challenge, Comment, UserProgress
+from .models import (Letter, Word, Challenge, Comment,
+                     UserProgress, YesNoQuestion)
 
 
 class LetterSerializer(serializers.ModelSerializer):
@@ -52,3 +53,10 @@ class UserProgressSerializer(serializers.ModelSerializer):
         model = UserProgress
         fields = ['id', 'challenge', 'completed', 'score', 'updated_at']
         read_only_fields = ['updated_at']
+
+
+class YesNoQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = YesNoQuestion
+        fields = ['id', 'scene_description',
+                  'question', 'answer', 'visual_url']

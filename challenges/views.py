@@ -2,11 +2,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
-from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .models import Letter, Word, Challenge, Comment, UserProgress
-from .serializers import (LetterSerializer, WordSerializer, ChallengeSerializer,
-                          CommentSerializer, UserProgressSerializer)
+from django.shortcuts import get_object_or_404
+from .models import (Letter, Word, Challenge, Comment,
+                     UserProgress, YesNoQuestion)
+from .serializers import (LetterSerializer, WordSerializer,
+                          ChallengeSerializer, CommentSerializer,
+                          UserProgressSerializer, YesNoQuestionSerializer)
 
 
 class LetterList(generics.ListAPIView):
@@ -201,6 +203,12 @@ class UserProgressCreateOrUpdate(APIView):
         return Response(serializer.data, status=status_code)
 
 
+class YesNoQuestionList(generics.ListAPIView):
+    queryset = YesNoQuestion.objects.all()
+    serializer_class = YesNoQuestionSerializer
+    permission_classes = [permissions.AllowAny]  # Public read
+
+
 # The flow when someone sends POST → /comments/
 
 # ListCreateAPIView.post() is called (you didn't write it — it's inherited)
@@ -217,7 +225,7 @@ class UserProgressCreateOrUpdate(APIView):
 
 # Why overriding perform_create() is the cleanest & safest choice here
 # Your Comment model probably looks something like this:
-# Pythonclass Comment(models.Model):
+# class Comment(models.Model):
 #     user      = models.ForeignKey(User, on_delete=CASCADE)
 #     challenge = models.ForeignKey(Challenge, on_delete=CASCADE)
 #     text      = models.TextField()
@@ -241,7 +249,7 @@ class UserProgressCreateOrUpdate(APIView):
 # DRF style — you only override the tiny hook, rest of create() / post() stays default
 # Clean serializer — you can make user and challengeread_only=True in the serializer
 
-# Pythonclass CommentSerializer(serializers.ModelSerializer):
+# class CommentSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = Comment
 #         fields = ['id', 'text', 'created_at', 'user', 'challenge']
@@ -257,7 +265,7 @@ class UserProgressCreateOrUpdate(APIView):
 # Wrap in transaction with side effects
 
 # Example (rare):
-# Pythondef create(self, request, *args, **kwargs):
+# def create(self, request, *args, **kwargs):
 #     serializer = self.get_serializer(data=request.data)
 #     serializer.is_valid(raise_exception=True)
 #     self.perform_create(serializer)

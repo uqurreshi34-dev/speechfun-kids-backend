@@ -3,7 +3,8 @@ from .views import (
     LetterList, WordListByLetter,
     ChallengeListByLetterAndDifficulty, ChallengeDetail,
     CommentListCreate, CommentDetail,
-    UserProgressList, UserProgressCreateOrUpdate, get_user_progress, update_progress
+    UserProgressList, UserProgressCreateOrUpdate,
+    get_user_progress, update_progress, YesNoQuestionList
 )
 
 
@@ -24,4 +25,5 @@ urlpatterns = [
     #     path('progress/', UserProgressList.as_view(), name='user-progress-list'),
     #     path('progress/update/', UserProgressCreateOrUpdate.as_view(),
     #          name='user-progress-update'),
+    path('yes-no-questions/', YesNoQuestionList.as_view(), name='yes-no-questions'),
 ]

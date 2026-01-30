@@ -65,3 +65,28 @@ class UserProgress(models.Model):
     def __str__(self):
         status = "✓" if self.completed else "○"
         return f"{status} {self.user.username} - {self.challenge.title}"
+
+
+class YesNoQuestion(models.Model):
+    scene_description = models.CharField(
+        max_length=200, help_text="Description of the visual scene (e.g., 'Girl is jumping')")
+    question = models.CharField(
+        max_length=200, help_text="The Yes/No question (e.g., 'Is she jumping?')")
+    answer = models.CharField(max_length=3, choices=[
+                              ('Yes', 'Yes'), ('No', 'No')])
+    visual = models.FileField(
+        upload_to='yesno_visuals/',
+        null=True,
+        blank=True,
+        help_text="Upload image or short video clip (max 5MB, prefer .jpg/.png or .mp4)"
+    )
+    # auto-filled after upload
+    visual_url = models.URLField(blank=True, null=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.question} ({self.answer})"
+
+    class Meta:
+        verbose_name_plural = "Yes/No Questions"
