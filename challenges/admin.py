@@ -40,7 +40,7 @@ class YesNoQuestionAdminForm(forms.ModelForm):
                     file,
                     resource_type="auto",  # auto-detect image or video
                     folder="speechfun-kids/yesno-visuals",
-                    public_id=safe_question,
+                    public_id=f"q_{safe_question}",
                     overwrite=True,
                     quality="auto",
                     fetch_format="auto",
