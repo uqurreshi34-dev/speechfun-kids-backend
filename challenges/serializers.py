@@ -59,4 +59,4 @@ class YesNoQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = YesNoQuestion
         fields = ['id', 'scene_description',
-                  'question', 'answer', 'visual_url']
+                  'question', 'correct_answer', 'visual_url']

@@ -15,7 +15,7 @@ class YesNoQuestionAdminForm(forms.ModelForm):
     class Meta:
         model = YesNoQuestion
         fields = ['scene_description', 'question',
-                  'answer', 'visual_url']
+                  'correct_answer', 'visual_url']
         widgets = {
             'visual_url': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
         }
@@ -62,8 +62,8 @@ class YesNoQuestionAdminForm(forms.ModelForm):
 @admin.register(YesNoQuestion)
 class YesNoQuestionAdmin(admin.ModelAdmin):
     form = YesNoQuestionAdminForm
-    list_display = ('question', 'answer', 'has_visual')
-    list_filter = ('answer',)
+    list_display = ('question', 'correct_answer', 'has_visual')
+    list_filter = ('correct_answer',)
     search_fields = ('question', 'scene_description')
 
     @admin.display(boolean=True, description='Visual')
