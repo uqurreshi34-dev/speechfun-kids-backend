@@ -69,24 +69,29 @@ class UserProgress(models.Model):
 
 class YesNoQuestion(models.Model):
     scene_description = models.CharField(
-        max_length=200, help_text="Description of the visual scene (e.g., 'Girl is jumping')")
-    question = models.CharField(
-        max_length=200, help_text="The Yes/No question (e.g., 'Is she jumping?')")
-    answer = models.CharField(max_length=3, choices=[
-                              ('Yes', 'Yes'), ('No', 'No')])
-    visual = models.FileField(
-        upload_to='yesno_visuals/',
-        null=True,
-        blank=True,
-        help_text="Upload image or short video clip (max 5MB, prefer .jpg/.png or .mp4)"
+        max_length=200,
+        help_text="Short description of the visual scene, e.g. 'Girl is jumping'"
     )
-    # auto-filled after upload
-    visual_url = models.URLField(blank=True, null=True, editable=False)
+    question = models.CharField(
+        max_length=200,
+        help_text="The yes/no question, e.g. 'Is she jumping?'"
+    )
+    correct_answer = models.CharField(
+        max_length=3,
+        choices=[('Yes', 'Yes'), ('No', 'No')],
+        help_text="Correct answer"
+    )
+    visual_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Cloudinary URL for image or video (auto-filled after upload)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.question} ({self.answer})"
+        return f"{self.question} → {self.correct_answer}"
 
     class Meta:
         verbose_name_plural = "Yes/No Questions"

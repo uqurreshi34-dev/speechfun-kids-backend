@@ -15,7 +15,7 @@ class YesNoQuestionAdminForm(forms.ModelForm):
     class Meta:
         model = YesNoQuestion
         fields = ['scene_description', 'question',
-                  'correct_answer', 'visual', 'visual_url']
+                  'correct_answer', 'visual_url']
         widgets = {
             'visual_url': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
         }
@@ -23,32 +23,23 @@ class YesNoQuestionAdminForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
 
-        # If a new file was uploaded
+        # Handle new file upload
         if 'visual_file' in self.files and self.files['visual_file']:
             file = self.files['visual_file']
 
             try:
-                # Upload to Cloudinary
                 upload_result = cloudinary.uploader.upload(
                     file,
-                    resource_type="auto",  # auto detects image/video
+                    resource_type="auto",  # auto-detect image or video
                     folder="speechfun-kids/yesno-visuals",
-                    # clean name
                     public_id=f"q_{instance.question.lower().replace(' ', '_')[:50]}",
                     overwrite=True,
-                    quality="auto",           # optimize
+                    quality="auto",
                     fetch_format="auto",
-                    # Video specific (if video)
-                    transformation=[{'quality': 'auto', 'fetch_format': 'auto'}
-                                    ] if file.content_type.startswith('video') else None,
                 )
 
-                # Save the secure URL
                 instance.visual_url = upload_result['secure_url']
                 print(f"✅ Uploaded to Cloudinary: {instance.visual_url}")
-
-                # Optional: clear the FileField so it doesn't store locally
-                instance.visual = None
 
             except Exception as e:
                 print(f"❌ Cloudinary upload failed: {e}")
