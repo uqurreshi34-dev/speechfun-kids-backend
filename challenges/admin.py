@@ -15,7 +15,7 @@ class YesNoQuestionAdminForm(forms.ModelForm):
     class Meta:
         model = YesNoQuestion
         fields = ['scene_description', 'question',
-                  'correct_answer', 'visual_url']
+                  'answer', 'visual_url']
         widgets = {
             'visual_url': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
         }
@@ -28,11 +28,19 @@ class YesNoQuestionAdminForm(forms.ModelForm):
             file = self.files['visual_file']
 
             try:
+                safe_question = (
+                    instance.question.lower()
+                    .replace('?', '')
+                    .replace(
+                        ' ', '_')
+                    .replace('/', '_')
+                    .replace('\\', '_')
+                )[:50]
                 upload_result = cloudinary.uploader.upload(
                     file,
                     resource_type="auto",  # auto-detect image or video
                     folder="speechfun-kids/yesno-visuals",
-                    public_id=f"q_{instance.question.lower().replace(' ', '_')[:50]}",
+                    public_id=safe_question,
                     overwrite=True,
                     quality="auto",
                     fetch_format="auto",
@@ -54,8 +62,8 @@ class YesNoQuestionAdminForm(forms.ModelForm):
 @admin.register(YesNoQuestion)
 class YesNoQuestionAdmin(admin.ModelAdmin):
     form = YesNoQuestionAdminForm
-    list_display = ('question', 'correct_answer', 'has_visual')
-    list_filter = ('correct_answer',)
+    list_display = ('question', 'answer', 'has_visual')
+    list_filter = ('answer',)
     search_fields = ('question', 'scene_description')
 
     @admin.display(boolean=True, description='Visual')
