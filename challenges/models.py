@@ -57,7 +57,8 @@ class Comment(models.Model):
 
 class UserProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(
+        Challenge, on_delete=models.CASCADE, null=True, blank=True)
     yes_no_question = models.ForeignKey(
         'YesNoQuestion', on_delete=models.CASCADE, null=True, blank=True)
     challenge_type = models.CharField(
