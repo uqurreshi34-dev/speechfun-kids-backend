@@ -1,3 +1,4 @@
+import traceback
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -121,13 +122,43 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 # Token auth with decorators is just more straightforward and explicit
 
 
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_user_progress(request):
+#     """Get all progress for the authenticated user"""
+#     progress = UserProgress.objects.filter(user=request.user)
+#     serializer = UserProgressSerializer(progress, many=True)
+#     return Response(serializer.data)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_progress(request):
-    """Get all progress for the authenticated user"""
-    progress = UserProgress.objects.filter(user=request.user)
-    serializer = UserProgressSerializer(progress, many=True)
-    return Response(serializer.data)
+    """Get all user progress (both letter and yes/no challenges)"""
+    try:
+        progress_items = UserProgress.objects.filter(user=request.user)
+
+        result = []
+        for item in progress_items:
+            # Determine which ID to return
+            if item.challenge:
+                challenge_id = item.challenge.id
+            elif item.yes_no_question:
+                challenge_id = item.yes_no_question.id
+            else:
+                continue
+
+            result.append({
+                'challenge': challenge_id,
+                'type': item.challenge_type,
+                'completed': item.completed,
+                'score': item.score
+            })
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"❌ Get progress error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # UPDATED: Changed to function-based view for Token auth
 
@@ -135,26 +166,108 @@ def get_user_progress(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_progress(request):
-    """Update or create progress for a challenge"""
     challenge_id = request.data.get('challenge')
+    challenge_type = request.data.get(
+        'challenge_type', 'letter')  # 'letter' or 'yes_no'
+    completed = request.data.get('completed', False)
+    score = request.data.get('score', 0)
+
+    print(f"=== PROGRESS UPDATE ===")
+    print(f"User: {request.user.username}")
+    print(f"Challenge ID: {challenge_id}")
+    print(f"Type: {challenge_type}")
+    print(f"Completed: {completed}")
 
     if not challenge_id:
         return Response({'error': 'Challenge ID required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    challenge = get_object_or_404(Challenge, pk=challenge_id)
+    try:
+        if challenge_type == 'yes_no':
+            # Handle Yes/No questions
+            try:
+                yes_no_q = YesNoQuestion.objects.get(id=challenge_id)
+            except YesNoQuestion.DoesNotExist:
+                return Response({'error': 'Yes/No question not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    progress, created = UserProgress.objects.update_or_create(
-        user=request.user,
-        challenge=challenge,
-        defaults={
-            'completed': request.data.get('completed', False),
-            'score': request.data.get('score', 0)
-        }
-    )
+            progress, created = UserProgress.objects.get_or_create(
+                user=request.user,
+                yes_no_question=yes_no_q,
+                defaults={
+                    'completed': completed,
+                    'score': score,
+                    'challenge_type': 'yes_no'
+                }
+            )
 
-    serializer = UserProgressSerializer(progress)
-    status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-    return Response(serializer.data, status=status_code)
+            if not created:
+                progress.completed = completed
+                progress.score = score
+                progress.save()
+
+            print(f"✅ Yes/No progress saved: {progress}")
+
+        else:  # 'letter' type (default)
+            # Handle regular letter challenges
+            try:
+                challenge = Challenge.objects.get(id=challenge_id)
+            except Challenge.DoesNotExist:
+                return Response({'error': 'Challenge not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            progress, created = UserProgress.objects.get_or_create(
+                user=request.user,
+                challenge=challenge,
+                defaults={
+                    'completed': completed,
+                    'score': score,
+                    'challenge_type': 'letter'
+                }
+            )
+
+            if not created:
+                progress.completed = completed
+                progress.score = score
+                progress.save()
+
+            print(f"✅ Letter progress saved: {progress}")
+
+        return Response({
+            'success': True,
+            'progress': {
+                'challenge': challenge_id,
+                'type': challenge_type,
+                'completed': completed,
+                'score': score
+            }
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"❌ Progress update error: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def update_progress(request):
+#     """Update or create progress for a challenge"""
+#     challenge_id = request.data.get('challenge')
+
+#     if not challenge_id:
+#         return Response({'error': 'Challenge ID required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     challenge = get_object_or_404(Challenge, pk=challenge_id)
+
+#     progress, created = UserProgress.objects.update_or_create(
+#         user=request.user,
+#         challenge=challenge,
+#         defaults={
+#             'completed': request.data.get('completed', False),
+#             'score': request.data.get('score', 0)
+#         }
+#     )
+
+#     serializer = UserProgressSerializer(progress)
+#     status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+#     return Response(serializer.data, status=status_code)
 
 
 # Keep the old class-based views for backwards compatibility (if needed)
@@ -206,7 +319,7 @@ class UserProgressCreateOrUpdate(APIView):
 class YesNoQuestionList(generics.ListAPIView):
     queryset = YesNoQuestion.objects.all()
     serializer_class = YesNoQuestionSerializer
-    permission_classes = [permissions.AllowAny]  # Public read
+    permission_classes = [permissions.IsAuthenticated]  # Not public read
 
 
 # The flow when someone sends POST → /comments/

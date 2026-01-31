@@ -58,13 +58,28 @@ class Comment(models.Model):
 class UserProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    yes_no_question = models.ForeignKey(
+        'YesNoQuestion', on_delete=models.CASCADE, null=True, blank=True)
+    challenge_type = models.CharField(
+        max_length=20, default='letter')  # 'letter' or 'yes_no'
+
     completed = models.BooleanField(default=False)
     score = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)  # Added for tracking.
 
-    def __str__(self):
-        status = "✓" if self.completed else "○"
-        return f"{status} {self.user.username} - {self.challenge.title}"
+    class Meta:
+        # Update unique constraint to allow both types
+        unique_together = [
+            ['user', 'challenge'],
+            ['user', 'yes_no_question']
+        ]
+
+        def __str__(self):
+            if self.challenge:
+                return f"✓ {self.user.username} - {self.challenge.title}"
+            elif self.yes_no_question:
+                return f"✓ {self.user.username} - {self.yes_no_question.question}"
+            return f"✓ {self.user.username}"
 
 
 class YesNoQuestion(models.Model):

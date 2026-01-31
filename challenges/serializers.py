@@ -51,7 +51,8 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProgress
-        fields = ['id', 'challenge', 'completed', 'score', 'updated_at']
+        fields = ['id', 'challenge', 'yes_no_question',
+                  'completed', 'score', 'updated_at']
         read_only_fields = ['updated_at']
 
 
