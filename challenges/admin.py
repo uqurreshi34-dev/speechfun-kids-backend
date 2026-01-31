@@ -2,10 +2,11 @@
 from django.contrib import admin
 from django import forms
 import cloudinary.uploader
-from .models import Letter, Word, Challenge, Comment, UserProgress, YesNoQuestion
-
+from .models import Letter, Word, Challenge, Comment, UserProgress, YesNoQuestion, FunctionalPhrase
 
 # Custom form for YesNoQuestion - uploads image/video to Cloudinary
+
+
 class YesNoQuestionAdminForm(forms.ModelForm):
     visual_file = forms.FileField(
         required=False,
@@ -65,6 +66,66 @@ class YesNoQuestionAdmin(admin.ModelAdmin):
     list_display = ('question', 'correct_answer', 'has_visual')
     list_filter = ('correct_answer',)
     search_fields = ('question', 'scene_description')
+
+    @admin.display(boolean=True, description='Visual')
+    def has_visual(self, obj):
+        return bool(obj.visual_url)
+
+
+class FunctionalPhraseAdminForm(forms.ModelForm):
+    visual_file = forms.FileField(
+        required=False,
+        help_text="Upload image (jpg/png) or short video (mp4). Max 5MB. Will be stored in Cloudinary.")
+
+    class Meta:
+        model = FunctionalPhrase
+        fields = ['phrase', 'visual_url']
+        widgets = {
+            'visual_url': forms.TextInput(attrs={'readonly': 'readonly', 'placeholder': 'Auto-filled after upload'}),
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        if 'visual_file' in self.files and self.files['visual_file']:
+            file = self.files['visual_file']
+
+            try:
+                safe_phrase = (
+                    instance.phrase.lower()
+                    .replace('?', '')
+                    .replace(' ', '_')
+                    .replace('/', '_')
+                    .replace('\\', '_')
+                )[:50]
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    resource_type="auto",
+                    folder="speechfun-kids/functional-visuals",
+                    public_id=f"phrase_{safe_phrase}",
+                    overwrite=True,
+                    quality="auto",
+                    fetch_format="auto",
+                )
+
+                instance.visual_url = upload_result['secure_url']
+                print(f"✅ Functional Phrase uploaded: {instance.visual_url}")
+
+            except Exception as e:
+                print(f"❌ Cloudinary upload failed: {e}")
+                self.add_error(
+                    'visual_file', f"Cloudinary upload failed: {str(e)}")
+
+        if commit:
+            instance.save()
+        return instance
+
+
+@admin.register(FunctionalPhrase)
+class FunctionalPhraseAdmin(admin.ModelAdmin):
+    form = FunctionalPhraseAdminForm
+    list_display = ('phrase', 'has_visual')
+    search_fields = ('phrase',)
 
     @admin.display(boolean=True, description='Visual')
     def has_visual(self, obj):

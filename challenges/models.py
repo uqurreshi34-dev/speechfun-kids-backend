@@ -61,6 +61,8 @@ class UserProgress(models.Model):
         Challenge, on_delete=models.CASCADE, null=True, blank=True)
     yes_no_question = models.ForeignKey(
         'YesNoQuestion', on_delete=models.CASCADE, null=True, blank=True)
+    functional_phrase = models.ForeignKey(
+        'FunctionalPhrase', on_delete=models.CASCADE, null=True, blank=True)
     challenge_type = models.CharField(
         max_length=20, default='letter')  # 'letter' or 'yes_no'
 
@@ -72,7 +74,8 @@ class UserProgress(models.Model):
         # Update unique constraint to allow both types
         unique_together = [
             ['user', 'challenge'],
-            ['user', 'yes_no_question']
+            ['user', 'yes_no_question'],
+            ['user', 'functional_phrase']
         ]
 
         def __str__(self):
@@ -80,6 +83,8 @@ class UserProgress(models.Model):
                 return f"✓ {self.user.username} - {self.challenge.title}"
             elif self.yes_no_question:
                 return f"✓ {self.user.username} - {self.yes_no_question.question}"
+            elif self.functional_phrase:
+                return f"✓ {self.user.username} - {self.functional_phrase.phrase}"
             return f"✓ {self.user.username}"
 
 
@@ -111,3 +116,24 @@ class YesNoQuestion(models.Model):
 
     class Meta:
         verbose_name_plural = "Yes/No Questions"
+
+
+class FunctionalPhrase(models.Model):
+    phrase = models.CharField(
+        max_length=200,
+        help_text="The exact phrase the child should say, e.g. 'I want water'"
+    )
+    visual_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Cloudinary URL for image or short video (auto-filled after upload)"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.phrase
+
+    class Meta:
+        verbose_name_plural = "Functional Phrases"

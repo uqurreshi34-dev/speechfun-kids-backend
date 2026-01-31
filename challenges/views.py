@@ -6,10 +6,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import (Letter, Word, Challenge, Comment,
-                     UserProgress, YesNoQuestion)
+                     UserProgress, YesNoQuestion, FunctionalPhrase)
 from .serializers import (LetterSerializer, WordSerializer,
                           ChallengeSerializer, CommentSerializer,
-                          UserProgressSerializer, YesNoQuestionSerializer)
+                          UserProgressSerializer, YesNoQuestionSerializer,
+                          FunctionalPhraseSerializer)
 
 
 class LetterList(generics.ListAPIView):
@@ -144,6 +145,8 @@ def get_user_progress(request):
                 challenge_id = item.challenge.id
             elif item.yes_no_question:
                 challenge_id = item.yes_no_question.id
+            elif item.functional_phrase:
+                challenge_id = item.functional_phrase.id
             else:
                 continue
 
@@ -205,6 +208,28 @@ def update_progress(request):
                 progress.save()
 
             print(f"✅ Yes/No progress saved: {progress}")
+
+        elif challenge_type == 'functional':
+            # Handle functional language phrases
+            try:
+                func_phrase = FunctionalPhrase.objects.get(id=challenge_id)
+            except FunctionalPhrase.DoesNotExist:
+                return Response({'error': 'Functional phrase not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            progress, created = UserProgress.objects.update_or_create(
+                user=request.user,
+                functional_phrase=func_phrase,
+                defaults={
+                    'completed': completed,
+                    'score': score,
+                    'challenge_type': 'functional'
+                }
+            )
+
+            if not created:
+                progress.completed = completed
+                progress.score = score
+                progress.save()
 
         else:  # 'letter' type (default)
             # Handle regular letter challenges
@@ -320,6 +345,12 @@ class YesNoQuestionList(generics.ListAPIView):
     queryset = YesNoQuestion.objects.all()
     serializer_class = YesNoQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]  # Not public read
+
+
+class FunctionalPhraseList(generics.ListAPIView):
+    queryset = FunctionalPhrase.objects.all()
+    serializer_class = FunctionalPhraseSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # The flow when someone sends POST → /comments/
